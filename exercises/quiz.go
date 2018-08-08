@@ -4,6 +4,8 @@ import (
 	"os"
 	"bufio"
 	"fmt"
+	"encoding/csv"
+	"io"
 	"strings"
 )
 
@@ -21,25 +23,28 @@ func (*quiz) Run() error {
 	}
 
 	reader := bufio.NewReader(file)
-	scanner := bufio.NewScanner(reader)
 	inputReader := bufio.NewReader(os.Stdin)
 	var right, wrong int32
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.Split(line, ",")
-		if len(tokens) != 2 {
-			return fmt.Errorf("Parse error at line: %s", line)
+	r := csv.NewReader(reader)
+	r.FieldsPerRecord = 2
+
+	for {
+		row, err := r.Read()
+		if err == io.EOF {
+			break
 		}
-		question := tokens[0]
-		answer := tokens[1]
+		if err != nil {
+			return fmt.Errorf("Failed to parse %s: %s", fileName, err)
+		}
+		question := row[0]
+		answer := row[1]
 
 		fmt.Printf("%s? ", question)
-
 		input, err := inputReader.ReadString('\n')
 
 		if err != nil {
-			return fmt.Errorf("Failed to read user input: %s", err)
+			return fmt.Errorf("Failed to read input: %s", err)
 		}
 
 		if strings.TrimRight(input, "\n") == answer {
@@ -47,9 +52,6 @@ func (*quiz) Run() error {
 		} else {
 			wrong++
 		}
-	}
-	if err = scanner.Err(); err != nil {
-		return fmt.Errorf("Reading %s failed: %s", fileName, err)
 	}
 
 	fmt.Printf("\nright: %d, wrong: %d\n", right, wrong)
