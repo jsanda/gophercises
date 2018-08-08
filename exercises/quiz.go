@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"io"
 	"strings"
+	"flag"
 )
 
 type quiz struct {}
@@ -16,10 +17,14 @@ func NewQuiz() *quiz {
 }
 
 func (*quiz) Run() error {
-	fileName := "exercises/problems.csv"
-	file, err := os.Open(fileName)
+	fileName := flag.String("quiz", "exercises/problems.csv",
+		"Specifies the quiz which should be a CSV file")
+
+	flag.Parse()
+
+	file, err := os.Open(*fileName)
 	if err != nil {
-		return fmt.Errorf("Failed to open %s: %s", fileName, err)
+		return fmt.Errorf("Failed to open %s: %s", *fileName, err)
 	}
 
 	reader := bufio.NewReader(file)
@@ -35,7 +40,7 @@ func (*quiz) Run() error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("Failed to parse %s: %s", fileName, err)
+			return fmt.Errorf("Failed to parse %s: %s", *fileName, err)
 		}
 		question := row[0]
 		answer := row[1]
