@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"fmt"
 	"encoding/csv"
-	"io"
 	"strings"
 	"flag"
 	"time"
@@ -25,6 +24,10 @@ func (*quiz) Run() error {
 
 	flag.Parse()
 
+	quiz, err := loadQuiz(fileName)
+	if err != nil {
+		return err
+	}
 	var right, wrong int32
 
 	fmt.Printf("You have %d seconds to complete the quiz. Go!\n", *seconds)
@@ -32,15 +35,15 @@ func (*quiz) Run() error {
 	done := make(chan struct{})
 	errors := make(chan error)
 
-	go takeQuiz(fileName, &right, &wrong, done, errors)
+	go takeQuiz(quiz, &right, &wrong, done, errors)
 
 	select {
 	case <-timer.C:
 		fmt.Println("\nTime is up!")
-		fmt.Printf("\nright: %d, wrong: %d\n", right, wrong)
+		printResults(right, wrong, int32(len(quiz)))
 	case <-done:
 		fmt.Println("Finished!")
-		fmt.Printf("\nright: %d, wrong: %d\n", right, wrong)
+		printResults(right, wrong, int32(len(quiz)))
 	case err := <- errors:
 		return err
 	}
@@ -48,28 +51,9 @@ func (*quiz) Run() error {
 	return nil
 }
 
-func takeQuiz(fileName *string, right *int32, wrong *int32, done chan<- struct{}, errors chan<- error) {
-	file, err := os.Open(*fileName)
-	if err != nil {
-		errors <- fmt.Errorf("Failed to open %s: %s", *fileName, err)
-		return
-	}
-
-	reader := bufio.NewReader(file)
+func takeQuiz(quiz [][]string, right *int32, wrong *int32, done chan<- struct{}, errors chan<- error) {
 	inputReader := bufio.NewReader(os.Stdin)
-
-	r := csv.NewReader(reader)
-	r.FieldsPerRecord = 2
-
-	for {
-		row, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			errors <- fmt.Errorf("Failed to parse %s: %s", *fileName, err)
-			return
-		}
+	for _, row := range quiz  {
 		question := row[0]
 		answer := row[1]
 
@@ -89,4 +73,20 @@ func takeQuiz(fileName *string, right *int32, wrong *int32, done chan<- struct{}
 	}
 
 	done <- struct{}{}
+}
+
+func loadQuiz(fileName *string) ([][]string, error) {
+	file, err := os.Open(*fileName)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open %s: %s", *fileName, err)
+	}
+	reader := bufio.NewReader(file)
+	r := csv.NewReader(reader)
+	r.FieldsPerRecord = 2
+
+	return r.ReadAll()
+}
+
+func printResults(right, wrong, numQuestions int32) {
+	fmt.Printf("\nright: %d, wrong: %d, total questions: %d\n", right, wrong, numQuestions)
 }
