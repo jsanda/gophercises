@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+var (
+	fileName = flag.String("quiz", "exercises/problems.csv",
+		"Specifies the quiz which should be a CSV file")
+	seconds = flag.Int("time", 60,
+		"Specifies the time in seconds allowed to complete the quiz")
+)
+
 type quiz struct {}
 
 func NewQuiz() *quiz {
@@ -17,13 +24,6 @@ func NewQuiz() *quiz {
 }
 
 func (*quiz) Run() error {
-	fileName := flag.String("quiz", "exercises/problems.csv",
-		"Specifies the quiz which should be a CSV file")
-	seconds := flag.Int("time", 60,
-		"Specifies the time in seconds allowed to complete the quiz")
-
-	flag.Parse()
-
 	quiz, err := loadQuiz(fileName)
 	if err != nil {
 		return err
