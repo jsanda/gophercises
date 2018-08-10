@@ -33,8 +33,24 @@ func (*urlShortener) Run() error {
 	if err != nil {
 		panic(err)
 	}
+
+	// Build the JSONHandler using the YAMLHandler as the fallback
+	json := `
+[
+  {
+    "path": "/json-godoc",
+    "url": "https://golang.org/pkg/encoding/json/"
+  },
+  {
+    "path": "/urlshort-readme",
+    "url": "https://github.com/gophercises/urlshort/blob/master/README.md"
+  }
+]
+`
+	jsonHandler, err := JSONHandler([]byte(json), yamlHandler)
+
 	fmt.Println("Starting the server on :8080")
-	http.ListenAndServe(":8080", yamlHandler)
+	http.ListenAndServe(":8080", jsonHandler)
 
 
 	return nil

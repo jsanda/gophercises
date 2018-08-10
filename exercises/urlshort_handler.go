@@ -3,6 +3,7 @@ package exercises
 import (
 	"net/http"
 	"gopkg.in/yaml.v2"
+	"encoding/json"
 )
 
 // MapHandler will return an http.HandlerFunc (which also
@@ -52,10 +53,31 @@ func parseYAML(yml []byte) (map[string]string, error) {
 	return paths, nil
 }
 
+func JSONHandler(jsonMappings[]byte, fallback http.Handler) (http.HandlerFunc, error) {
+	paths, err := parseJSON(jsonMappings)
+	if err != nil {
+		return nil, err
+	}
+	return redirect(paths, fallback), nil
+}
+
+func parseJSON(jsonMappings []byte) (map[string]string, error) {
+	mappings := make([]map[string]string, 0)
+	if err := json.Unmarshal(jsonMappings, &mappings); err != nil {
+		return nil, err
+	}
+	paths := make(map[string]string)
+	for _, v := range mappings {
+		paths[v["path"]] = v["url"]
+	}
+
+	return paths, nil
+}
+
 func redirect(paths map[string]string, fallback http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if val, ok := paths[req.URL.Path]; ok {
-			http.Redirect(w, req, val, 300)
+			http.Redirect(w, req, val, 302)
 		} else {
 			fallback.ServeHTTP(w, req)
 		}
