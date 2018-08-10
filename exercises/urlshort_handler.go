@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"gopkg.in/yaml.v2"
 	"encoding/json"
+	"github.com/coreos/bbolt"
 )
 
 // MapHandler will return an http.HandlerFunc (which also
@@ -72,6 +73,21 @@ func parseJSON(jsonMappings []byte) (map[string]string, error) {
 	}
 
 	return paths, nil
+}
+
+func BoltHandler(db *bolt.DB, fallback http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		db.View(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte("url_mappings"))
+			url := b.Get([]byte(req.URL.Path))
+			if url == nil {
+				fallback.ServeHTTP(w, req)
+			} else {
+				http.Redirect(w, req, string(url), 302)
+			}
+			return nil
+		})
+	}
 }
 
 func redirect(paths map[string]string, fallback http.Handler) http.HandlerFunc {

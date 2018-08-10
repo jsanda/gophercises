@@ -3,6 +3,8 @@ package exercises
 import (
 	"net/http"
 	"fmt"
+	"github.com/coreos/bbolt"
+	"log"
 )
 
 type urlShortener struct {}
@@ -49,10 +51,45 @@ func (*urlShortener) Run() error {
 `
 	jsonHandler, err := JSONHandler([]byte(json), yamlHandler)
 
+	db, err := openDB()
+	if err != nil {
+		log.Fatalf("Failed to open database: %s", err)
+	}
+	if err = initDB(db); err != nil {
+		log.Fatalf("Failed to initialize database: %s", err)
+	}
+	boltHandler := BoltHandler(db, jsonHandler)
+
+
 	fmt.Println("Starting the server on :8080")
-	http.ListenAndServe(":8080", jsonHandler)
+	http.ListenAndServe(":8080", boltHandler)
 
 
+	return nil
+}
+
+func openDB() (*bolt.DB, error) {
+	db, err := bolt.Open("urlshort.db", 0600, nil)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+func initDB(db *bolt.DB) error {
+	db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte("url_mappings"))
+		if err != nil {
+			return err
+		}
+		if err = b.Put([]byte("/bbolt"), []byte("https://github.com/coreos/bbolt")); err != nil {
+			return err
+		}
+		if err = b.Put([]byte("/bbolt-issues"), []byte("https://github.com/coreos/bbolt/issues")); err != nil {
+			return err
+		}
+		return nil
+	})
 	return nil
 }
 
