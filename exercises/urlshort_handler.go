@@ -1,6 +1,9 @@
 package exercises
 
-import "net/http"
+import (
+	"net/http"
+	"gopkg.in/yaml.v2"
+)
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -9,13 +12,7 @@ import "net/http"
 // If the path is not provided in the map, then the fallback
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		if val, ok := pathsToUrls[req.URL.Path]; ok {
-			http.Redirect(w, req, val, 300)
-		} else {
-			fallback.ServeHTTP(w, req)
-		}
-	}
+	return redirect(pathsToUrls, fallback)
 }
 
 // YAMLHandler will parse the provided YAML and then return
@@ -35,6 +32,32 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // See MapHandler to create a similar http.HandlerFunc via
 // a mapping of paths to urls.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	// TODO: Implement this...
-	return nil, nil
+	paths, err := parseYAML(yml)
+	if err != nil {
+		return nil, err
+	}
+	return redirect(paths, fallback), nil
+}
+
+func parseYAML(yml []byte) (map[string]string, error) {
+	mappings := make([]map[string]string, 0)
+	if err := yaml.Unmarshal(yml, &mappings); err != nil {
+		return nil, err
+	}
+	paths := make(map[string]string)
+	for _, v := range mappings {
+		paths[v["path"]] = v["url"]
+	}
+
+	return paths, nil
+}
+
+func redirect(paths map[string]string, fallback http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		if val, ok := paths[req.URL.Path]; ok {
+			http.Redirect(w, req, val, 300)
+		} else {
+			fallback.ServeHTTP(w, req)
+		}
+	}
 }
