@@ -4,6 +4,9 @@ import (
 	"github.com/jsanda/gophercises/exercises"
 	"flag"
 	"fmt"
+	"github.com/jsanda/gophercises/quiz"
+	"github.com/jsanda/gophercises/urlshort"
+	"github.com/jsanda/gophercises/cyoa"
 )
 
 type noOp struct {}
@@ -24,9 +27,11 @@ func main() {
 func getExercise(exercise *string) exercises.Exercise {
 	switch *exercise {
 	case "quiz":
-		return exercises.NewQuiz()
+		return quiz.NewQuiz()
 	case "urlshort":
-		return exercises.NewUrlShortener()
+		return urlshort.NewUrlShortener()
+	case "cyoa":
+		return cyoa.NewAdventure()
 	default:
 		return &noOp{}
 	}

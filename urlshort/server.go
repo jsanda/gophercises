@@ -1,4 +1,4 @@
-package exercises
+package urlshort
 
 import (
 	"net/http"
@@ -63,7 +63,6 @@ func (*urlShortener) Run() error {
 
 	fmt.Println("Starting the server on :8080")
 	http.ListenAndServe(":8080", boltHandler)
-
 
 	return nil
 }
