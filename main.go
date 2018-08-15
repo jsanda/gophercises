@@ -7,6 +7,7 @@ import (
 	"github.com/jsanda/gophercises/quiz"
 	"github.com/jsanda/gophercises/urlshort"
 	"github.com/jsanda/gophercises/cyoa"
+	"github.com/jsanda/gophercises/linkparser"
 )
 
 type noOp struct {}
@@ -32,6 +33,8 @@ func getExercise(exercise *string) exercises.Exercise {
 		return urlshort.NewUrlShortener()
 	case "cyoa":
 		return cyoa.NewAdventure()
+	case "linkparser":
+		return linkparser.NewParser()
 	default:
 		return &noOp{}
 	}
