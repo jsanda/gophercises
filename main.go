@@ -5,9 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jsanda/gophercises/quiz"
+	"github.com/jsanda/gophercises/sitemap"
 	"github.com/jsanda/gophercises/urlshort"
 	"github.com/jsanda/gophercises/cyoa"
 	"github.com/jsanda/gophercises/linkparser"
+	"log"
 )
 
 type noOp struct {}
@@ -21,11 +23,16 @@ func main() {
 	opt := flag.String("exercise", "", "Specifies the exercise to run")
 	flag.Parse()
 
-	exercise := getExercise(opt)
-	exercise.Run()
+	exercise, err := getExercise(opt)
+	if err != nil {
+		log.Fatalf("Failed to get exercise: %s", err)
+	}
+	if err:= exercise.Run(); err != nil {
+		log.Fatalf("%s failed: %s", *opt, err)
+	}
 }
 
-func getExercise(exercise *string) exercises.Exercise {
+func getExercise(exercise *string) (exercises.Exercise, error) {
 	switch *exercise {
 	case "quiz":
 		return quiz.NewQuiz()
@@ -35,7 +42,9 @@ func getExercise(exercise *string) exercises.Exercise {
 		return cyoa.NewAdventure()
 	case "linkparser":
 		return linkparser.NewParser()
+	case "sitemap":
+		return sitemap.NewBuilder()
 	default:
-		return &noOp{}
+		return &noOp{}, nil
 	}
 }

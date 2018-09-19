@@ -7,7 +7,10 @@ import (
 
 func TestSimpleLink(t *testing.T) {
 	linkparser.FileName = htmlFile("testdata/ex1.html")
-	parser := linkparser.NewParser()
+	parser, err:= linkparser.NewParser()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if err := parser.Run(); err != nil {
 		t.Fatal(err)
@@ -32,7 +35,10 @@ func TestSimpleLink(t *testing.T) {
 
 func TestMultipleLinksWithNestedElements(t *testing.T) {
 	linkparser.FileName = htmlFile("testdata/ex2.html")
-	parser := linkparser.NewParser()
+	parser, err := linkparser.NewParser()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if err := parser.Run(); err != nil {
 		t.Fatal(err)
@@ -61,7 +67,10 @@ func TestMultipleLinksWithNestedElements(t *testing.T) {
 
 func TestLinksNestInOtherElements(t *testing.T) {
 	linkparser.FileName = htmlFile("testdata/ex3.html")
-	parser := linkparser.NewParser()
+	parser, err := linkparser.NewParser()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if err := parser.Run(); err != nil {
 		t.Fatal(err)
@@ -94,7 +103,10 @@ func TestLinksNestInOtherElements(t *testing.T) {
 
 func TestLinkWithCommentInBody(t *testing.T) {
 	linkparser.FileName = htmlFile("testdata/ex4.html")
-	parser := linkparser.NewParser()
+	parser, err := linkparser.NewParser()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if err := parser.Run(); err != nil {
 		t.Fatal(err)

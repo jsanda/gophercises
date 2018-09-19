@@ -19,8 +19,8 @@ var (
 
 type quiz struct {}
 
-func NewQuiz() *quiz {
-	return &quiz{}
+func NewQuiz() (*quiz, error) {
+	return &quiz{}, nil
 }
 
 func (*quiz) Run() error {

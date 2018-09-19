@@ -26,8 +26,8 @@ type Option struct {
 	ArcName string		`json:"arc"`
 }
 
-func NewAdventure() *adventure {
-	return &adventure{}
+func NewAdventure() (*adventure, error) {
+	return &adventure{}, nil
 }
 
 func (*adventure) Run() error {

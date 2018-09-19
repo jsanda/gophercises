@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"bufio"
+	"io"
 	"os"
 	"golang.org/x/net/html"
 	"strings"
@@ -11,6 +12,7 @@ import (
 )
 
 type parser struct {
+	Html io.Reader
 	Links []*Link
 }
 
@@ -23,17 +25,20 @@ var (
 	FileName = flag.String("html", "", "Specifies the HTML file to parse")
 )
 
-func NewParser() *parser {
-	return &parser{Links: make([]*Link, 0, 10)}
+func NewParser() (*parser, error) {
+	file, err := os.Open(*FileName)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open %s: %s", *FileName, err)
+	}
+	return NewParserForReader(bufio.NewReader(file))
+}
+
+func NewParserForReader(reader io.Reader) (*parser, error) {
+	return &parser{Html: reader, Links: make([]*Link, 0)}, nil
 }
 
 func (p *parser) Run() error {
-	file, err := os.Open(*FileName)
-	if err != nil {
-		return fmt.Errorf("Failed to open %s: %s", *FileName, err)
-	}
-	reader := bufio.NewReader(file)
-	z := html.NewTokenizer(reader)
+	z := html.NewTokenizer(p.Html)
 	for {
 		if z.Next() == html.ErrorToken {
 			return z.Err()

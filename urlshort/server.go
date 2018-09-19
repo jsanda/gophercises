@@ -9,8 +9,8 @@ import (
 
 type urlShortener struct {}
 
-func NewUrlShortener() *urlShortener {
-	return &urlShortener{}
+func NewUrlShortener() (*urlShortener, error) {
+	return &urlShortener{}, nil
 }
 
 func (*urlShortener) Run() error {
