@@ -1,12 +1,12 @@
 package sitemap
 
 import (
+	"encoding/xml"
 	"flag"
-	"fmt"
 	"github.com/jsanda/gophercises/linkparser"
-	"log"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 type builder struct {
@@ -18,6 +18,15 @@ type builder struct {
 type queue struct {
 	elements []string
 	index map[string]bool
+}
+
+type sitemapUrl struct {
+	Loc string 			`xml:"loc"`
+}
+
+type urlset struct {
+	NS   string       	`xml:"xmlns,attr"`
+	URLs []sitemapUrl 	`xml:"url"`
 }
 
 var (
@@ -37,14 +46,28 @@ func (b *builder) Run() error {
 		elements: make([]string, 0),
 		index: make(map[string]bool),
 	}
+	urlSet := urlset{
+		NS:   "http://www.sitemaps.org/schemas/sitemap/0.9",
+		URLs: make([]sitemapUrl, 0),
+	}
 	uris.enqueue(b.initalURL.RequestURI())
-	b.scrape(&uris)
+	b.scrape(&uris, &urlSet)
+
+	f, err := os.Create("sitemap.xml")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	encoder := xml.NewEncoder(f)
+	encoder.Indent(" ", "  ")
+	if err = encoder.Encode(urlSet); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (b *builder) scrape(uris *queue) error {
-	fmt.Printf("URIs: %v\n\n", uris)
+func (b *builder) scrape(uris *queue, urlSet *urlset) error {
 	if uris.isEmpty() {
 		return nil
 	}
@@ -54,12 +77,10 @@ func (b *builder) scrape(uris *queue) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("url = %s\n", u)
+	urlSet.URLs = append(urlSet.URLs, sitemapUrl{Loc: u.String()})
 
 	res, err := http.Get(u.String())
 	if err != nil {
-		log.Printf("Failed to get %s\n", u)
 		return err
 	}
 
@@ -85,7 +106,7 @@ func (b *builder) scrape(uris *queue) error {
 		uris.enqueue(nextURL.RequestURI())
 	}
 
-	b.scrape(uris)
+	b.scrape(uris, urlSet)
 
 	return nil
 }
@@ -112,7 +133,6 @@ func (q *queue) isEmpty() bool {
 
 func (q *queue) enqueue(s string) {
 	if _, found := q.index[s]; !found {
-		fmt.Printf("enqueing %s\n", s)
 		q.elements = append(q.elements, s)
 		q.index[s] = true
 	}
