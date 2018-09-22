@@ -3,6 +3,7 @@ package sitemap
 import (
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"github.com/jsanda/gophercises/linkparser"
 	"net/http"
 	"net/url"
@@ -11,6 +12,7 @@ import (
 
 type builder struct {
 	initalURL url.URL
+	depth int
 }
 
 // This is a special purpose queue for a couple reasons. First, it does not allow duplicates.
@@ -31,13 +33,14 @@ type urlset struct {
 
 var (
 	address = flag.String("url", "", "Specifies the site to parse")
+	depthFlag = flag.Int("depth", 2, "The max number of links to follow. Defaults to two.")
 )
 
 func NewBuilder() (*builder, error) {
 	if u, err := url.Parse(*address); err != nil {
 		return nil, err
 	} else {
-		return &builder{ initalURL: *u}, nil
+		return &builder{ initalURL: *u, depth: *depthFlag}, nil
 	}
 }
 
@@ -46,12 +49,14 @@ func (b *builder) Run() error {
 		elements: make([]string, 0),
 		index: make(map[string]bool),
 	}
+	fmt.Printf("depth = %d\n", b.depth)
 	urlSet := urlset{
 		NS:   "http://www.sitemaps.org/schemas/sitemap/0.9",
 		URLs: make([]sitemapUrl, 0),
 	}
+	urlSet.URLs = append(urlSet.URLs, sitemapUrl{Loc: b.initalURL.String()})
 	uris.enqueue(b.initalURL.RequestURI())
-	b.scrape(&uris, &urlSet)
+	b.scrape(&uris, &urlSet, 0)
 
 	f, err := os.Create("sitemap.xml")
 	if err != nil {
@@ -67,17 +72,21 @@ func (b *builder) Run() error {
 	return nil
 }
 
-func (b *builder) scrape(uris *queue, urlSet *urlset) error {
+func (b *builder) scrape(uris *queue, urlSet *urlset, depth int) error {
 	if uris.isEmpty() {
 		return nil
 	}
 
 	uri := uris.dequeue()
+
+	if depth > b.depth {
+		return nil
+	}
+
 	u, err := b.resolveURL(&uri)
 	if err != nil {
 		return err
 	}
-	urlSet.URLs = append(urlSet.URLs, sitemapUrl{Loc: u.String()})
 
 	res, err := http.Get(u.String())
 	if err != nil {
@@ -103,10 +112,11 @@ func (b *builder) scrape(uris *queue, urlSet *urlset) error {
 		if nextURL.Hostname() != b.initalURL.Hostname() {
 			continue
 		}
+		urlSet.URLs = append(urlSet.URLs, sitemapUrl{Loc: nextURL.String()})
 		uris.enqueue(nextURL.RequestURI())
 	}
-
-	b.scrape(uris, urlSet)
+	depth = depth + 1
+	b.scrape(uris, urlSet, depth)
 
 	return nil
 }
