@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jsanda/gophercises/camelcase"
 	"github.com/jsanda/gophercises/exercises"
 	"flag"
 	"fmt"
@@ -44,6 +45,8 @@ func getExercise(exercise *string) (exercises.Exercise, error) {
 		return linkparser.NewParser()
 	case "sitemap":
 		return sitemap.NewBuilder()
+	case "camelcase":
+		return camelcase.NewCamelCaseReader()
 	default:
 		return &noOp{}, nil
 	}
