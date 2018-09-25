@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jsanda/gophercises/camelcase"
+	"github.com/jsanda/gophercises/cipher"
 	"github.com/jsanda/gophercises/exercises"
 	"flag"
 	"fmt"
@@ -47,6 +48,8 @@ func getExercise(exercise *string) (exercises.Exercise, error) {
 		return sitemap.NewBuilder()
 	case "camelcase":
 		return camelcase.NewCamelCaseReader()
+	case "cipher":
+		return cipher.NewCaesarCipher()
 	default:
 		return &noOp{}, nil
 	}
